@@ -95,7 +95,8 @@
                                 transformRequest: angular.identity,
                                 headers: { 'Content-Type': undefined }
                             }).then(function (result) {
-                                alert(result.data)
+                                alert(result.data);
+                                window.location.reload();
                                 console.log(result.data)
                                 if (result.error) {
                                     alert("ERROR " + result.error.message);
