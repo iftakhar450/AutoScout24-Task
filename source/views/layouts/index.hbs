@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>AutoScout24</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.1/angular.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.1/angular-route.min.js"></script>
+
+    <style>
+        .capitalize {
+            text-transform: capitalize;
+        }
+
+        .monthHeading {
+            background-color: black;
+            color: white;
+            padding: 10px;
+            width: 160px;
+            font-weight: bold;
+        }
+
+        .uploadbtn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+    </style>
+    <script>
+        var app = angular.module("myApp", []);
+        app.config(function ($interpolateProvider) {
+            $interpolateProvider.startSymbol('{[{');
+            $interpolateProvider.endSymbol('}]}');
+        });
+        app.controller('autoSocut24', function ($scope, $http, $element) {
+            $scope.rp1 = false;
+            $scope.rp2 = false;
+            $scope.rp3 = false;
+            $scope.rp4 = false;
+
+            $scope.response = [];
+            $scope.radiobtnStatus = 'listings';
+
+            $scope.getRequestParams = function () {
+                var params = {
+                    'name': name,
+                    'locationType': "none",
+                    'layerInfo': {
+                        fields: [{
+                            "name": "street",
+                            "type": "esriFieldTypeString",
+                            "alias": "Street",
+                            "nullable": false,
+                            "editable": true,
+                            "domain": null
+                        }]
+                    }
+                };
+
+                return JSON.stringify(params);
+            }
+
+            // upload file function
+            $scope.uploadFile = function () {
+                var input = $element.find("input#fileInput");
+                // Verifying that a file has been selected
+                var fileName = input.val();
+                if (fileName) {
+                    // Getting file name and verifying file extenxion
+                    fileName = fileName.toLowerCase().replace("c:\\fakepath\\", "");
+                    console.log(fileName);
+                    console.log($scope.radiobtnStatus);
+
+                    if (fileName == $scope.radiobtnStatus+'.csv') {
+                        if (fileName.indexOf(".csv") !== -1) {
+                            var name = fileName.split(".")[0];
+                            // Getting selected file content
+                            var file = input[0].files[0];
+                            console.log(file);
+                            // Setting request parameters
+                            var fd = new FormData();
+                            fd.append('file', file);
+                            fd.append('filetype', 'csv');
+                            fd.append('publishParameters', $scope.getRequestParams());
+                            fd.append('f', 'json');
+                            
+                            $http.post('/file/upload', fd, {
+                                transformRequest: angular.identity,
+                                headers: { 'Content-Type': undefined }
+                            }).then(function (result) {
+                                alert(result.data)
+                                console.log(result.data)
+                                if (result.error) {
+                                    alert("ERROR " + result.error.message);
+                                    return;
+                                }
+                            })
+                            /*  .then(function (error) {
+                                    console.log(error)
+                                  alert("Error uploading file");
+                                 //    alert(error);
+                              });*/
+                        } else {
+                            alert("Invalid file");
+                        }
+
+                    } else {
+                        alert("Invalid file")
+                    }
+
+                } else {
+                    alert("No file selected");
+                }
+            }
+            // function for report 1
+            $scope.reportOne = function () {
+                $http.get("/report/reportOne")
+                    .then(function (response) {
+                        $scope.response = response.data;
+                        $scope.rp1 = true;
+                        $scope.rp2 = false;
+                        $scope.rp3 = false;
+                        $scope.rp4 = false;
+                    });
+            }
+
+            // function for report 2
+            $scope.reportTwo = function () {
+                $http.get("/report/reportTwo")
+                    .then(function (response) {
+                        $scope.response = response.data;
+                        $scope.rp1 = false;
+                        $scope.rp2 = true;
+                        $scope.rp3 = false;
+                        $scope.rp4 = false;
+                    });
+
+            }
+
+            // function for report 3
+            $scope.reportThree = function () {
+                $scope.rp1 = false;
+                $scope.rp2 = false;
+                $scope.rp3 = true;
+                $scope.rp4 = false;
+            }
+
+            // function for report 4
+            $scope.reportFour = function () {
+                $http.get("/report/reportFour")
+                    .then(function (response) {
+                        console.log(response.data)
+                        $scope.response = response.data;
+                        $scope.rp1 = false;
+                        $scope.rp2 = false;
+                        $scope.rp3 = false;
+                        $scope.rp4 = true;
+                    });
+
+            }
+        });
+    </script>
+</head>
+
+<body ng-app="myApp" ng-controller="autoSocut24 as ctrl">
+    <div class="jumbotron text-center">
+
+        <button type="button" class="btn btn-primary uploadbtn" data-toggle="modal" data-target="#exampleModal">
+            Upload Files
+        </button>
+
+        <!-- Modal -->
+        <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">Upload files here</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form>
+                            <div class="form-check" style="text-align: left;">
+                                <input class="form-check-input" type="radio" name="gridRadios" id="listing"
+                                    ng-model="radiobtnStatus" value="listings" checked>
+                                <label class="form-check-label" for="gridRadios1">
+                                    Listing file(file name should be like "listing.csv")
+                                </label>
+                            </div>
+                            <div class="form-check" style="text-align: left;">
+                                <input class="form-check-input" type="radio" name="gridRadios" id="contacts"
+                                    ng-model="radiobtnStatus" value="contacts">
+                                <label class="form-check-label" for="gridRadios2">
+                                    Contact file(file name should be like "contacts.csv")
+                                </label>
+                            </div>
+                            <input type="file" name="recfile" class="form-control-file" id="fileInput" accept='.csv'>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" ng-click="uploadFile()">Upload</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <h2>View All Reports</h2>
+        <div class="justify-content-md-center" style="text-align: center;">
+            <a href="#" class="btn btn-primary btn-lg active" ng-click="reportOne()" role="button"
+                aria-pressed="true">Report 1</a>
+            <a href="#" class="btn btn-primary btn-lg active" ng-click="reportTwo()" role="button"
+                aria-pressed="true">Report 2</a>
+            <a href="#" class="btn btn-primary btn-lg active" ng-click="reportThree()" role="button"
+                aria-pressed="true">Report 3</a>
+            <a href="#" class="btn btn-primary btn-lg active" ng-click="reportFour()" role="button"
+                aria-pressed="true">Report 4</a>
+        </div>
+    </div>
+
+    <div class="container" style="overflow: auto;height: 534px;">
+        <h3 ng-if="!rp1  && !rp2 && !rp3 && !rp4">Please click the button to view the report<h3>
+                {{!--START Report One html --}}
+                <div ng-if="rp1">
+                    <h3>Average Listing Selling Price per Seller Type</h3>
+                    <table class="table table-striped table-dark" style="border: solid;">
+                        <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Seller Type</th>
+                                <th scope="col">Average in Euro</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr ng-repeat="d1 in response">
+                                <th scope="row">{[{$index +1}]}</th>
+                                <td class="capitalize">{[{d1.name}]}</td>
+                                <td>{[{d1.avarage_price}]}</td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+
+                </div>
+
+                {{!--END Report One html --}}
+
+                {{!--START Report Two html --}}
+                <div ng-if="rp2">
+                    <h3>Percentual distribution of available cars by Make</h3>
+                    <table class="table table-striped table-dark" style="border: solid;">
+                        <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Make</th>
+                                <th scope="col">Distribution</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr ng-repeat="d2 in response">
+                                <th scope="row">{[{$index +1}]}</th>
+                                <td class="capitalize">{[{d2.make}]}</td>
+                                <td>{[{d2.percentage}]}</td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+
+                </div>
+                {{!--END Report Two html --}}
+
+                {{!--START Report Three html --}}
+                <div ng-if="rp3">
+                    <h3>Average price of the 30% most contacted listings</h3>
+                    <p>In this task requirement not specified clearly </p>
+
+                </div>
+                {{!--END Report Three html --}}
+
+                {{!--START Report Four html --}}
+                <div ng-if="rp4">
+                    <h3>The Top 5 most contacted listings per Month</h3>
+                    <div ng-repeat="d4 in response">
+                        <h4 class="monthHeading">Month: {[{d4.month}]} </h4>
+                        <table class="table table-striped table-dark" style="border: solid;">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Ranking</th>
+                                    <th scope="col">Listing Id</th>
+                                    <th scope="col">Make</th>
+                                    <th scope="col">Selling Price</th>
+                                    <th scope="col">Mileage</th>
+                                    <th scope="col">Total Amount of contacts</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="i in d4.data">
+                                    <th scope="row">{[{$index +1}]}</th>
+                                    <td class="capitalize">{[{i.id}]}</td>
+                                    <td class="capitalize">{[{i.make}]}</td>
+                                    <td>{[{i.price}]}</td>
+                                    <td>{[{i.mileage}]}</td>
+                                    <td style="text-align: center;">{[{i.count}]}</td>
+                                </tr>
+
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {{!--END Report One html --}}
+    </div>
+</body>
+
+</html>
